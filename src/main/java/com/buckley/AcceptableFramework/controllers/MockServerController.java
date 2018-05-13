@@ -1,6 +1,7 @@
 package com.buckley.AcceptableFramework.controllers;
 
 import com.buckley.AcceptableFramework.models.RequestModel;
+import com.buckley.AcceptableFramework.utils.RequestResponseWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,12 +49,17 @@ public class MockServerController {
 
 
     private RequestModel.Request findURIMapEntry(HttpServletRequest httpRequest) {
-        // TODO Need to handle request params, currently ignored
         for (RequestModel.Request requestCandidate : requests.getRequests()) {
             if (httpRequest.getRequestURI().equals(requestCandidate.getUrl())) {
-                //if (httpRequest.getQueryString() == null || httpRequest.getQueryString().equals(requestCandidate.getQuery())) {
+                String orginalQuery = httpRequest.getQueryString();
+                if(orginalQuery == null) {
                     return requestCandidate;
-                //}
+                }else{
+                    String formattedQuery = RequestResponseWriter.formatQueryString(orginalQuery);
+                    if(formattedQuery.equalsIgnoreCase(requestCandidate.getQuery())){
+                        return requestCandidate;
+                    }
+                }
             }
         }
         return null;

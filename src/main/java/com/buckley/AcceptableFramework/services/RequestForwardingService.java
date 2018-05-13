@@ -12,7 +12,6 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import javax.servlet.http.HttpServletRequest;
 import java.io.BufferedReader;
@@ -46,6 +45,7 @@ public class RequestForwardingService {
         String urlString = (queryString != null && queryString.length() == 0) ? origin + request.getRequestURI() : origin + request.getRequestURI() + "?" + queryString;
 
         if(requestType.equals(HttpGet.METHOD_NAME)){
+
             HttpGet getRequest = new HttpGet(urlString);
             setHeaders(getRequest, request);
             HttpResponse response = client.execute(getRequest);
@@ -78,7 +78,12 @@ public class RequestForwardingService {
         HashMap<String, Object> requestResponseMap = new HashMap<>();
         requestResponseMap.put("request", request);
         requestResponseMap.put("response", responseBody);
-        requestResponseMap.put("query", queryString);
+        if(queryString != null){
+            requestResponseMap.put("query", RequestResponseWriter.formatQueryString(queryString));
+        }else{
+            requestResponseMap.put("query", null);
+        }
+
         RequestResponseWriter.addToRequestResponseMaps(requestResponseMap);
         return responseBody;
     }
