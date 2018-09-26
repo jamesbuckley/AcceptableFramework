@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
 
 @RestController
 @RequestMapping("**")
@@ -28,7 +29,7 @@ public class MockServerController {
     @RequestMapping(method = RequestMethod.GET)
     public String getMethod(HttpServletRequest httpRequest) {
 
-        RequestModel.Request duplicateRequest = findURIMapEntry(httpRequest);
+        RequestModel.Request duplicateRequest = findURIMapEntry(httpRequest, RequestMethod.GET);
         if(duplicateRequest != null){
             return duplicateRequest.getResponse();
         }else{
@@ -39,7 +40,7 @@ public class MockServerController {
     @RequestMapping(method = RequestMethod.POST)
     public String postMethod(HttpServletRequest httpRequest) {
 
-        RequestModel.Request duplicateRequest = findURIMapEntry(httpRequest);
+        RequestModel.Request duplicateRequest = findURIMapEntry(httpRequest, RequestMethod.POST);
         if(duplicateRequest != null){
             return duplicateRequest.getResponse();
         }else{
@@ -48,16 +49,24 @@ public class MockServerController {
     }
 
 
-    private RequestModel.Request findURIMapEntry(HttpServletRequest httpRequest) {
-        for (RequestModel.Request requestCandidate : requests.getRequests()) {
-            if (httpRequest.getRequestURI().equals(requestCandidate.getUrl())) {
-                String orginalQuery = httpRequest.getQueryString();
-                if(orginalQuery == null) {
-                    return requestCandidate;
-                }else{
-                    String formattedQuery = RequestResponseWriter.formatQueryString(orginalQuery);
-                    if(formattedQuery.equalsIgnoreCase(requestCandidate.getQuery())){
+    private RequestModel.Request findURIMapEntry(HttpServletRequest httpRequest, RequestMethod methodType) {
+        List<RequestModel.Request> requestList = null;
+        if(methodType.equals(RequestMethod.GET)){
+            requestList = requests.getGetRequests();
+        }else if(methodType.equals(RequestMethod.POST)){
+            requestList = requests.getPostRequests();
+        }
+        if(requestList != null){
+            for (RequestModel.Request requestCandidate : requestList) {
+                if (httpRequest.getRequestURI().equals(requestCandidate.getUrl())) {
+                    String orginalQuery = httpRequest.getQueryString();
+                    if(orginalQuery == null) {
                         return requestCandidate;
+                    }else{
+                        String formattedQuery = RequestResponseWriter.formatQueryString(orginalQuery);
+                        if(formattedQuery.equalsIgnoreCase(requestCandidate.getQuery())){
+                            return requestCandidate;
+                        }
                     }
                 }
             }

@@ -19,7 +19,9 @@ import java.util.concurrent.CopyOnWriteArraySet;
 
 public class RequestResponseWriter {
 
-    private static CopyOnWriteArraySet<HashMap<String, Object>> requestResponseMaps = new CopyOnWriteArraySet<>();
+    private static CopyOnWriteArraySet<HashMap<String, Object>> getRequestResponseMaps = new CopyOnWriteArraySet<>();
+    private static CopyOnWriteArraySet<HashMap<String, Object>> postRequestResponseMaps = new CopyOnWriteArraySet<>();
+
     private static String outputFile;
     private static String[] paramsToIgnore;
 
@@ -33,9 +35,13 @@ public class RequestResponseWriter {
         paramsToIgnore = paramsToIgnoreProps;
     }
 
-    public static void addToRequestResponseMaps(HashMap<String, Object> requestResponse){
-        requestResponseMaps.add(requestResponse);
+    public static void addToGetRequestResponseMaps(HashMap<String, Object> requestResponse){
+        getRequestResponseMaps.add(requestResponse);
     }
+    public static void addToPostRequestResponseMaps(HashMap<String, Object> requestResponse){
+        postRequestResponseMaps.add(requestResponse);
+    }
+
 
     @PreDestroy
     public static void createURLMapEntry()  {
@@ -46,18 +52,28 @@ public class RequestResponseWriter {
             PrintWriter out = new PrintWriter(bw))
         {
             int requestNumber = 0;
-            for (HashMap map: requestResponseMaps){
+            for (HashMap map: getRequestResponseMaps){
                 String responseBody = (String)map.get("response");
                 HttpRequestBase request = (HttpRequestBase)map.get("request");
                 String queryString = map.get("query") != null ? (String)map.get("query") : "";
-                String baseKey = "app.requests["+requestNumber+"].";
+                String baseKey = "acceptable.get.requests["+requestNumber+"].";
+                prop.setProperty(baseKey+"url", request.getURI().getPath());
+                prop.setProperty(baseKey+"query", queryString);
+                prop.setProperty(baseKey+"response", responseBody);
+                requestNumber++;
+            }
+            for (HashMap map: postRequestResponseMaps){
+                String responseBody = (String)map.get("response");
+                HttpRequestBase request = (HttpRequestBase)map.get("request");
+                String queryString = map.get("query") != null ? (String)map.get("query") : "";
+                String baseKey = "acceptable.post.requests["+requestNumber+"].";
                 prop.setProperty(baseKey+"url", request.getURI().getPath());
                 prop.setProperty(baseKey+"query", queryString);
                 prop.setProperty(baseKey+"response", responseBody);
                 requestNumber++;
             }
             DefaultPropertiesPersister p = new DefaultPropertiesPersister();
-            p.store(prop, out, "Acceptable Recorde Requests");
+            p.store(prop, out, "Acceptable Recorded Requests");
             //prop.store(out, null);
         }catch (Exception e){
             System.out.println(e);

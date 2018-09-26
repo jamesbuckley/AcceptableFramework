@@ -49,14 +49,14 @@ public class RequestForwardingService {
             HttpGet getRequest = new HttpGet(urlString);
             setHeaders(getRequest, request);
             HttpResponse response = client.execute(getRequest);
-            return processResponse(getRequest, response, queryString);
+            return processGetResponse(getRequest, response, queryString);
         }else if(requestType.equals(HttpPost.METHOD_NAME)){
             HttpPost postRequest = new HttpPost(origin + request.getRequestURI());
             setHeaders(postRequest, request);
             List<NameValuePair> params = URLEncodedUtils.parse(new URI(urlString), UTF_8);
             postRequest.setEntity(new UrlEncodedFormEntity(params));
             HttpResponse response = client.execute(postRequest);
-            return processResponse(postRequest, response,  queryString);
+            return processPostResponse(postRequest, response,  queryString);
         }
         return null;
     }
@@ -73,8 +73,21 @@ public class RequestForwardingService {
         return String.valueOf(result);
     }
 
-    private String processResponse(HttpRequestBase request, HttpResponse originalResponse, String queryString) throws IOException {
+    private String processGetResponse(HttpRequestBase request, HttpResponse originalResponse, String queryString) throws IOException {
         String responseBody = returnResponseBody(originalResponse);
+        HashMap<String, Object> requestResponseMap = processResponse(request, responseBody, queryString);
+        RequestResponseWriter.addToGetRequestResponseMaps(requestResponseMap);
+        return responseBody;
+    }
+
+    private String processPostResponse(HttpRequestBase request, HttpResponse originalResponse, String queryString) throws IOException {
+        String responseBody = returnResponseBody(originalResponse);
+        HashMap<String, Object> requestResponseMap = processResponse(request, responseBody, queryString);
+        RequestResponseWriter.addToPostRequestResponseMaps(requestResponseMap);
+        return responseBody;
+    }
+
+    private HashMap<String, Object> processResponse(HttpRequestBase request, String responseBody, String queryString) throws IOException {
         HashMap<String, Object> requestResponseMap = new HashMap<>();
         requestResponseMap.put("request", request);
         requestResponseMap.put("response", responseBody);
@@ -83,9 +96,7 @@ public class RequestForwardingService {
         }else{
             requestResponseMap.put("query", null);
         }
-
-        RequestResponseWriter.addToRequestResponseMaps(requestResponseMap);
-        return responseBody;
+        return requestResponseMap;
     }
 
     private void setHeaders(HttpRequestBase getRequest, HttpServletRequest request){
